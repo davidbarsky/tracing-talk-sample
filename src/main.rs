@@ -47,16 +47,15 @@ where
     }
 
     fn call(&mut self, req: Request<T>) -> Self::Future {
-        let span = Span::current();
-        let method: &str = req.method().as_str();
-        let uri: &str = req.method().as_str();
-        let version: String = format!("{:?}", req.version());
-        let version: &str = version.as_str();
-        span.record("http.req.method", &method);
-        span.record("http.req.uri", &uri);
-        span.record("http.req.version", &version);
+        let span = span!(
+            Level::INFO,
+            "request",
+            http.req.method = %req.method(),
+            http.req.uri = %req.uri();
+            http.req.version = %req.version(),
+        );
 
-        self.service.call(req)
+        self.service.call(req).instrument(span)
     }
 }
 
@@ -68,13 +67,7 @@ async fn handle<I>(io: I) -> Result<(), hyper::error::Error>
 where
     I: AsyncRead + AsyncWrite + Send + Sync + Unpin + 'static,
 {
-    let span = span!(
-        Level::INFO,
-        "handler",
-        http.req.method = field::Empty,
-        http.req.uri = field::Empty,
-        http.req.version = field::Empty
-    );
+    let span = span!(Level::INFO, "handler");
     let service = ServiceBuilder::new()
         .layer(TracingLayer)
         .service(service_fn(hello));
