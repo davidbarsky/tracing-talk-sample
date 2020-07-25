@@ -52,7 +52,7 @@ where
             "request",
             http.req.method = %req.method(),
             http.req.uri = %req.uri();
-            http.req.version = %req.version(),
+            http.req.version = ?req.version(),
         );
 
         self.service.call(req).instrument(span)
